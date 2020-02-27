@@ -18,12 +18,22 @@ p +labs(name="Candidates", title="Plot of Polling Data by State (missing Vermoun
 #change default legend
 
 
-#2
+#2 Worked toghether with Diva
+install.packages("tidyr")
 library(dplyr)
 library(tidyr)
 library(readr)
 primaryPolls<-read.csv('https://jmontgomery.github.io/PDS/Datasets/president_primary_polls_feb2020.csv')
-primaryPolls$start_date<-as.Date(primaryPolls$start_date, "%m/%d/%y")
+
+piv1<-primaryPolls%>%group_by(candidate_name, state) %>%
+  filter(candidate_name %in% c("Amy Klobuchar", "Bernard Sanders", "Elizabeth Warren", "Joseph R. Biden Jr.", "Michael Bloomberg", "Pete Buttigieg")) %>% #limit this down to only the relevant candidates
+  summarise(mean=mean(pct)) #new variable mean created to help present data
+
+piv2<-pivot_wider(piv1, names_from = candidate_name, values_from = mean) #Re-organize the dataset so that there is only one row for each candidate-state dyad
+
+#measure size
+object.size(piv2) #6672 bytes
+object.size(primaryPolls) #1011304 bytes
 
 #3
 install.packages("fivethirtyeight")
@@ -41,13 +51,12 @@ polls<-filter(polls, candidate_name == c("Amy Klobuchar", "Bernard Sanders","Eli
 polls<-select(polls,candidate_name, sample_size, start_date, party, pct)#subsetting the data
 
 setdiff(Endorsements$candidate_name, polls$candidate_name) 
-setdiff(polls$candidate_name,Endorsements$candidate_name) 
+setdiff(polls$candidate_name, Endorsements$candidate_name) 
+
 #output of the last two lines indicates that only "Joseph R. Biden Jr." "Bernard Sanders" are different across both tables
-poll %>%
-  mutate(mpg=replace(mpg, cyl==4, NA)) %>%
-  as.data.frame()#rename bernie and biden
+polls$candidate_name<-recode(polls$candidate_name,  "Bernard Sanders"="Bernie Sanders","Joseph R. Biden Jr."="Joe Biden")#rename bernie and biden
 new<-polls %>% inner_join(Endorsements, by="candidate_name") #combine both data set into one dataset call "new"
-new<-new%>%group_by(candidate_name) %>% summarise(numEndorsement=n())#Create a variable which indicates the number of endorsements for each of the five candidates using dplyr.
+new<-new %>% group_by(candidate_name) %>% summarise(numEndorsement=n())#Create a variable which indicates the number of endorsements for each of the five candidates using dplyr.
 #Plot the number of endorsement each of the 5 candidates have. Save your plot as an object p
 p<-ggplot(data=as_data_frame(new))+
   geom_point(mapping = aes(x=new$candidate_name, y=new$numEndorsement, color=candidate_name))
@@ -60,5 +69,13 @@ p + theme_dark()
 p+theme_minimal()+labs(title="Endorsement by Candidates",
                        x ="Names", y = "Number of Endorsement")
 #4
-library(tidyverse) #install.packages('tm') library(tm) #install.packages('lubridate') library(lubridate) #install.packages('wordcloud') library(wordcloud)
-tweets <- read_csv('https://politicaldatascience.com/PDS/Datasets/trump_tweets.csv')
+
+library(tidyverse) 
+install.packages('tm') 
+library(tm) 
+install.packages('lubridate') 
+library(lubridate) 
+install.packages('wordcloud') 
+library(wordcloud)
+tweets <- read.csv('https://politicaldatascience.com/PDS/Datasets/trump_tweets.csv', stringsAsFactors = F)
+
