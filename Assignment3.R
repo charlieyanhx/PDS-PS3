@@ -69,7 +69,6 @@ p + theme_dark()
 p+theme_minimal()+labs(title="Endorsement by Candidates",
                        x ="Names", y = "Number of Endorsement")
 #4
-
 library(tidyverse) 
 install.packages('tm') 
 library(tm) 
@@ -77,5 +76,53 @@ install.packages('lubridate')
 library(lubridate) 
 install.packages('wordcloud') 
 library(wordcloud)
-tweets <- read.csv('https://politicaldatascience.com/PDS/Datasets/trump_tweets.csv', stringsAsFactors = F)
+tweets <- read_csv('https://politicaldatascience.com/PDS/Datasets/trump_tweets.csv')
+
+tweets<-tweets%>%separate(created_at,c("date","time"),sep=" ")#First separate the created_at variable into two new variables where the date and the time are in separate columns.
+
+tweets<-tweets%>%arrange(desc(date))#sort descending
+#Then report the range of dates that is in this dataset.
+head(tweets$date[[1]],5) #[1] "2/13/2020"
+tweets<-tweets%>%arrange(date)#sort ascending
+head(tweets$date[[1]],5) #[1] "1/1/2014"
+
+tweets<-tweets%>%filter(is_retweet==FALSE)#remove retweets
+topR<-tweets%>%arrange(desc(retweet_count))#sort base on retweet
+#print top 5
+head(topR$text[[1]],5)
+head(topR$text[[2]],5)
+head(topR$text[[3]],5)
+head(topR$text[[4]],5)
+head(topR$text[[5]],5)
+topF<-tweets%>%arrange(desc(favorite_count))#sort base on favorite
+#print top 5
+head(topF$text[[1]],5)
+head(topF$text[[2]],5)
+head(topF$text[[3]],5)
+head(topF$text[[4]],5)
+head(topF$text[[5]],5)
+
+#Remove extraneous whitespace, remove numbers and punctuation, convert everything to lower case
+dfCorpus = Corpus(VectorSource(tweets$text))
+
+#Remove extraneous whitespace, remove numbers and punctuation, convert everything to lower case and remove the standard english stop words and include the following as stop words
+dfCorpus%>%
+  tm_map(removeNumbers) %>% 
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+dfCorpus <- tm_map(dfCorpus, content_transformer(tolower))
+dfCorpus <- tm_map(dfCorpus, removeWords, c("see", "people","new","want","one","even","must","need","done","back","just","going", "know",
+                                     "can","said","like","many","like","realdonaldtrump"))
+
+wordcloud(dfCorpus,min.freq=3,max.words = 50,random.color = TRUE,random.order=FALSE) #Create a document term matrix called DTM that includes the argument control = list(weighting = weightTfIdf)
+  
+DTM <- DocumentTermMatrix(dfCorpus,control = list(weighting = weightTfIdf))#Create a document term matrix called DTM that includes the argument
+
+DTM$dimnames$Terms
+
+DTM=removeSparseTerms(DTM, 0.8) #using a lower frequency bound of .8.
+DTM$dimnames$Terms
+
+
+?removeSparseTerms
 
